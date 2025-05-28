@@ -6,6 +6,7 @@ This repository contains the codebase for automatically computing and generating
 1. The R Markdown file (*Factbook_generation_wrapper.Rmd*) acts as a wrapper for generating the Factbook and is the only file that needs to be executed.
 2. Raw data files cannot be provided due to the sensitivity of the institutional data and therefore this repository cannot be used; rather, it demonstrates the steps taken for generating the publication.
 3. University Financial information (*Factbook_generation_University_Finances.R*) with format `(paste0(university_finances_dir, "NCCU_FY_", year, "-", year+1, ".xlsx")` (e.g. *NCCU_FY_2023-2024.xlsx*).
+4. The file *FactBook_function.R* contains an inventory of functions for specific processes during the computation and generation processes. These functions of often called throughout. 
 
 
 **Usage:**
