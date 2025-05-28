@@ -1,4 +1,5 @@
 **Background:**
+
 This repository contains the codebase for automatically computing and generating the yearly FactBook publication for [North Carolina Central University (NCCU)](https://www.nccu.edu/). Within institutional research, a Factbook (sometimes referred to as a *Data Book* or *Institutional Data Profile*) is a comprehensive, annual or periodic report that presents key statistics and high-level summaries about a college or university. It serves as a central reference for internal planning, external reporting, and public transparency.
 
 **Notes:**
