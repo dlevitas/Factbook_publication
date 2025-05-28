@@ -1,0 +1,155 @@
+---
+title: "FactBook generation wrapper"
+author: "Dan Deabler"
+date: "2025-03-27"
+output: html_document
+---
+
+# This is wrapper script that executes all specific FactBook section scripts (e.g. FactBook_generation_Enrollment.R)
+
+
+# NOTES:
+# 1). This file acts as a wrapper for generating the North Carolina Central University (NCCU) Factbook and is the only file that needs to be executed.
+# 2). Raw data files cannot be provided due to the sensitivity of the institutional data and therefore this repository cannot be used; rather, it demonstrates the steps taken for generating the publication.
+# 3). University Financial information (Factbook_generation_University_Finances.R) with format `(paste0(university_finances_dir, "NCCU_FY_", year, "-", year+1, ".xlsx")` (e.g. NCCU_FY_2023-2024).
+
+
+# Set global variables
+```{r}
+
+username <- "ddeabler"
+year <- 2023 # This specifies both the Fall semester (Fall 2023) and the academic year (2023-2024).
+data_dir <- "O:/OIRA/IR/Dan/Data Cleanup/" # Where data source files are stored
+intermediary_dir <- paste0("C:/Users/", username, "/Desktop/Factbook_visualizations/")
+output_dir <- "O:/OIRA/Factbook/" # Where output files should reside
+photo_shelter_dir <- paste0(output_dir, "NCCU_photo_shelter/") # directory specifying photo shelter files
+university_finances_dir <- paste0(output_dir, "University_Finances/") # directory specifying university finance reports
+tuition_pdf_file <- paste0("O:/OIRA/IR/Tuition and Fees/", year, "-", year+1, "-Approved-Tuition-and-Fees-Schedule.pdf") # file path of PDF document
+overwrite <- "yes" # yes or no. Yes will remove all output/intermediary folders for specified year and start over
+
+NCCU_maroon <- "#862633"
+NCCU_gray <- "#A2AAAD"
+bg_color <- "#e5dfca"
+rich_maroon <- "#6A2C3E"
+black <- "#000"
+font_type <- "Calibri"
+
+```
+
+
+
+# Pass variables to individual FactBook section scripts for execution
+```{r, warning=FALSE, message=FALSE}
+
+# 1). Before we begin anything, need to ensure Chrome browser is installed, otherwise won't work and need to install Chrome
+if (is.null(pagedown::find_chrome())) {
+  message("Chrome browser not found on this system, which must be installed to execute this program. Terminating now...")
+}
+
+
+# 2). Source file containing collection of functions, and load necessary packages
+source(paste0(output_dir, "FactBook_functions.R"))
+load_packages()
+
+
+# 3). Set a few things up
+if (overwrite == "yes") {
+  if (file.exists(paste0(output_dir, "Factbook_", year, "-", year+1))) {
+    dir_delete(paste0(output_dir, "Factbook_", year, "-", year+1))
+  }
+  if (file.exists(intermediary_dir)) {
+    dir_delete(intermediary_dir)
+  }
+}
+
+if (!file.exists(intermediary_dir)) {
+    dir.create(intermediary_dir)
+}
+
+if (!file.exists(output_dir)) {
+    dir.create(output_dir)
+}
+
+if (dir.exists(paste0(output_dir, "Factbook_visualizations"))) {
+  unlink(paste0(output_dir, "Factbook_visualizations"), recursive = TRUE)
+}
+
+
+# 3). Convert all NCCU photo shelter JPEG pictures to HTML format (if necessary)
+jpg_to_html_convert(photo_shelter_dir)
+
+
+# 4). Copy oira_gradret.txt file into data_dir
+file.copy("W:/Source/oira_gradret.txt", data_dir)
+
+
+# 5). Create parameter list that will be passed to individual FactBook section scripts for execution
+params_list <- list(
+  section_id = "s1", # default value
+  section = "", # default value
+  year = year,
+  data_dir = data_dir,
+  intermediary_dir = intermediary_dir,
+  output_dir = output_dir,
+  photo_shelter_dir = photo_shelter_dir,
+  NCCU_maroon = NCCU_maroon,
+  NCCU_gray = NCCU_gray,
+  font_type = font_type,
+  bg_color = bg_color,
+  rich_maroon = rich_maroon,
+  black = black
+)
+
+
+# 6). # Create information list 
+section_info_list <- list(
+  list(section_id = "s1", section = "General Information", script = "Factbook_generation_General_Information.R", dashboard_url = ""),
+  list(section_id = "s1", section = "Eagle Facts in Brief", script = "", dashboard_url = ""),
+  list(section_id = "s2", section = "New Student", script = "Factbook_generation_New_Student.R", dashboard_url = "https://www.nccu.edu/oira/dashboards-institutional-data/admissions-dashboard"),
+  list(section_id = "s3", section = "Fall Enrollment", script = "Factbook_generation_Fall_Enrollment.R", dashboard_url = "https://www.nccu.edu/oira/dashboards-institutional-data/enrollment-dashboard"),
+  list(section_id = "s4", section = "Degrees Awarded", script = "Factbook_generation_Degrees_Awarded.R", dashboard_url = "https://www.nccu.edu/oira/dashboards-institutional-data/nccu-degrees-awarded-dashboard"),
+  list(section_id = "s5", section = "Student Financial Aid", script = "Factbook_generation_Student_Financial_Aid.R", dashboard_url = "https://www.nccu.edu/oira/dashboards-institutional-data/financial-aid"),
+  list(section_id = "s6", section = "Employees", script = "Factbook_generation_Employees.R", dashboard_url = "https://www.nccu.edu/oira/dashboards-institutional-data/nccu-employment"),
+  list(section_id = "s7", section = "University Finances", script = "Factbook_generation_University_Finances.R", dashboard_url = ""),
+  list(section_id = "s8", section = "End of Document", script = "", dashboard_url = ""),
+  list(section_id = "s9", section = "HTML-to-PDF conversion", script = "Factbook_generation_HTML_to_PDF.R", dashboard_url = "")
+)
+
+
+# 7). Execute Fact Book sections code
+generate_main_title_page(year, intermediary_dir, photo_shelter_dir, bg_color)
+
+for (section_info in section_info_list) {
+
+  if (!section_info$section_id == "s9") {
+    # Generate section title HTML pages
+    generate_section_title_page(section_info, intermediary_dir, bg_color, section_info$section)
+  }
+  
+  if (!(section_info$section_id == "s8") & !(section_info$section == "Eagle Facts in Brief")) {
+    # Update parameters and environment for code execution
+    params_list$section_id <- section_info$section_id
+    params_list$section <- section_info$section
+  
+    list2env(params_list, envir = globalenv())
+  
+    print("")
+    print("-----------------------------------")
+    print(paste0("Execution section: ", section_info$section))
+    print("-----------------------------------")
+    source(paste0(output_dir, section_info$script), echo = FALSE)
+  }
+}
+
+
+# 8). Once all sections have finished, move the intermediary locations visualizations to the output directory
+print("Moving intermediary directory contents to output directory")
+old_path <- intermediary_dir
+new_path <- paste0(output_dir, "Factbook_", year, "-", year+1)
+
+dir_copy(old_path, new_path, overwrite = TRUE)
+dir_delete(old_path)
+
+print(paste0("Completed FactBook ", year, "-", year+1, " generation"))
+
+```
